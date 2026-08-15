@@ -15,6 +15,7 @@ import {
   handleTemplateWebhookChange,
   isTemplateWebhookField,
 } from '@/lib/whatsapp/template-webhook'
+import { afterAgentHook } from '@/lib/agent-hook'
 
 // The `after()` callback in POST runs within this route's max duration.
 // Inbound processing can fan out to per-media Meta verification calls, so
@@ -879,6 +880,18 @@ async function processMessage(
       configOwnerUserId,
     })
   }
+
+  // Agente de Pedidos IA (glowylamps) — se ejecuta después de flows/automations/AI auto-reply
+  // para no competir con respuestas determinísticas. Solo corre si AGENT_ENABLED="true".
+  await afterAgentHook({
+    conversation: { id: conversation.id },
+    contact: { id: contactRecord.id },
+    text: contentText ?? message.text?.body ?? "",
+    media_url: mediaUrl,
+    media_type: mediaType,
+    accountId,
+    configOwnerUserId,
+  })
 
   // message.received webhook (public API). Awaited — not fire-and-forget
   // — because we're inside the route's `after()` block, which only keeps
