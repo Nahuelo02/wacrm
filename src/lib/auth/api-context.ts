@@ -102,6 +102,15 @@ export async function requireApiKey(
   }
 
   if (scope && !hasScope(row.scopes, scope)) {
+    // DIAGNOSTIC — temporary: surface the exact key/scope mismatch in the
+    // server log so we don't have to guess from client-side error bodies.
+    // Logs only key id + name + scope names, never the bearer itself.
+    // Strip once the media:read rollout is proven.
+    console.warn(
+      `[auth.api-context] 403 forbidden: key id=${row.id} name="${row.name}" ` +
+      `has scopes [${row.scopes.join(', ') || '(none)'}], ` +
+      `required '${scope}'`
+    );
     throw forbidden(`This API key is missing the '${scope}' scope`);
   }
 
